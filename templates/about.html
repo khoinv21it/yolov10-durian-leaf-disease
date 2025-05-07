@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giới thiệu - YOLOv10</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .card { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Giới thiệu về YOLOv10 và Ứng dụng</h1>
+        <nav class="mb-4">
+            <a href="/" class="btn btn-outline-primary">Trang chủ</a>
+            <a href="/about" class="btn btn-outline-primary active">Giới thiệu</a>
+        </nav>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title">Thuật toán YOLOv10</h2>
+                        <p class="card-text">
+                            YOLOv10 (You Only Look Once) là phiên bản tiên tiến nhất trong dòng thuật toán YOLO, được phát triển bởi Ultralytics. Đây là một mô hình nhận diện đối tượng theo thời gian thực (real-time object detection), nổi bật với khả năng cân bằng giữa tốc độ và độ chính xác. YOLOv10 cải tiến từ các phiên bản trước (như YOLOv5, YOLOv8) thông qua các tối ưu hóa về kiến trúc và hiệu suất, phù hợp cho cả ứng dụng thực tế trên CPU lẫn GPU.
+                        </p>
+                        <ul>
+                            <li><strong>Kiến trúc tối ưu hóa</strong>: Sử dụng các lớp convolution (CNN) được thiết kế nhẹ hơn, như Depthwise Separable Convolution, để giảm số phép tính (FLOPs) trong khi vẫn duy trì khả năng trích xuất đặc trưng hình ảnh hiệu quả.</li>
+                            <li><strong>One-stage detection</strong>: Tích hợp cơ chế phát hiện một giai đoạn, cho phép dự đoán đồng thời vị trí bounding box (hộp bao quanh đối tượng) và phân loại lớp (class) trong một lần xử lý duy nhất, giúp tăng tốc độ đáng kể so với các mô hình two-stage như Faster R-CNN.</li>
+                            <li><strong>Hiệu suất đa nền tảng</strong>: Được tối ưu để chạy hiệu quả trên nhiều thiết bị phần cứng, từ CPU cho các hệ thống tài nguyên thấp đến GPU cho hiệu suất cao, nhờ giảm tham số và hỗ trợ xuất sang các định dạng như ONNX, TFLite.</li>
+                        </ul>
+                        <p><strong>Cách dự đoán của YOLOv10:</strong></p>
+                        <ol>
+                            <li><strong>Chia ảnh thành lưới (grid)</strong>: Ảnh đầu vào được chia thành một lưới ô vuông (ví dụ: 13x13 hoặc 52x52 tùy cấu hình). Mỗi ô lưới chịu trách nhiệm phát hiện các đối tượng có trung tâm nằm trong phạm vi của nó.</li>
+                            <li><strong>Dự đoán cho mỗi ô lưới</strong>: Mỗi ô dự đoán nhiều bounding box (thường 2-5), kèm theo:
+                                <ul>
+                                    <li><em>Bounding box</em>: Tọa độ (x, y, width, height) định vị đối tượng.</li>
+                                    <li><em>Confidence score</em>: Xác suất ô chứa đối tượng thực sự, kết hợp IoU (Intersection over Union) với nhãn thật.</li>
+                                    <li><em>Class probabilities</em>: Xác suất đối tượng thuộc vào từng lớp (ví dụ: Algal-Leaf-Spot, Leaf-Blight).</li>
+                                </ul>
+                            </li>
+                            <li><strong>Non-Maximum Suppression (NMS)</strong>: Sau khi dự đoán, loại bỏ các bounding box trùng lặp bằng cách:
+                                <ol>
+                                    <li>Chọn box có confidence cao nhất.</li>
+                                    <li>Loại bỏ các box khác có IoU vượt ngưỡng (thường 0.5) với box đã chọn.</li>
+                                    <li>Lặp lại để giữ lại các box tốt nhất đại diện cho từng đối tượng.</li>
+                                </ol>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title">Framework sử dụng</h2>
+                        <p class="card-text">Ứng dụng này được xây dựng và dự đoán dựa trên các framework sau:</p>
+                        <ul>
+                            <li><strong>FastAPI</strong>: Framework Python hiện đại để xây dựng API nhanh, hỗ trợ bất đồng bộ (async). Dùng để xử lý yêu cầu upload và trả về kết quả HTML.</li>
+                            <li><strong>Ultralytics</strong>: Thư viện cung cấp YOLOv10, hỗ trợ huấn luyện, dự đoán, và xuất mô hình sang các định dạng như ONNX, TFLite.</li>
+                            <li><strong>OpenCV</strong>: Thư viện xử lý ảnh/video, dùng để đọc file, vẽ bounding box và lưu kết quả.</li>
+                            <li><strong>Bootstrap</strong>: Framework CSS để tạo giao diện đẹp, responsive, dễ sử dụng.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title">Ứng dụng thực tế</h2>
+                        <p class="card-text">
+                            Ứng dụng này cho phép nhận diện và phân loại bệnh trên lá sầu riêng dựa trên 5 phiên bản YOLOv10 (n, s, m, b, l). Người dùng có thể:
+                        </p>
+                        <ul>
+                            <li>Upload ảnh hoặc video.</li>
+                            <li>Chọn 1 hoặc 2 mô hình để so sánh kết quả, độ tin cậy và tốc độ.</li>
+                            <li>Xem kết quả trực tiếp với bounding box và nhãn bệnh.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center">
+        <div class="container">
+            <p>&copy; 2025 Dự án Nhận diện bệnh lá sầu riêng. Powered by YOLOv10.</p>
+            <p>Dữ liệu từ <a href="https://universe.roboflow.com/project-ufibr/durian-leaf-disease-laqo2/dataset/5" target="_blank">Roboflow (Durian Leaf Disease Dataset, CC BY 4.0)</a></p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

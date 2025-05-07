@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhận diện bệnh lá sầu riêng</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/chat.css">
+    <style>
+        .result-container { margin-top: 20px; }
+        img, video { max-width: 100%; height: auto; }
+        footer { margin-top: 50px; background-color: #f8f9fa; padding: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <nav class="mb-4">
+            <a href="/" class="btn btn-outline-primary">Trang chủ</a>
+            <a href="/about" class="btn btn-outline-primary">Giới thiệu</a>
+        </nav>
+        <h1 class="text-center mb-4">Nhận diện bệnh trên lá sầu riêng với YOLOv10</h1>
+        
+        <form id="predictForm" method="post" enctype="multipart/form-data" class="mb-4">
+            <div class="mb-3">
+                <label for="file" class="form-label">Chọn ảnh hoặc video:</label>
+                <input type="file" class="form-control" id="file" name="file" accept="image/*,video/*" required>
+            </div>
+            <div class="mb-3">
+                <label for="model1" class="form-label">Chọn mô hình 1:</label>
+                <select class="form-select" id="model1" name="model1" required>
+                    {% for model in models %}
+                        <option value="{{ model }}" {% if model == model1 %}selected{% endif %}>{{ model }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="model2" class="form-label">Chọn mô hình 2 (tuỳ chọn):</label>
+                <select class="form-select" id="model2" name="model2">
+                    <option value="">Không chọn</option>
+                    {% for model in models %}
+                        <option value="{{ model }}" {% if model == model2 %}selected{% endif %}>{{ model }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Predict</button>
+        </form>
+
+        {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+
+        <div class="result-container" id="resultContainer">
+            {% if result1 %}
+                <div class="row">
+                    <div class="col-md-{{ '6' if result2 else '12' }}">
+                        <h3>{{ model1 }}</h3>
+                        <p>Độ tin cậy trung bình: {{ conf1 }}</p>
+                        <p>Tốc độ dự đoán: {{ time1 }} ms</p>
+                        <p>Các bệnh phát hiện: 
+                            {% if diseases1 %}
+                                {{ diseases1 | join(", ") }}
+                            {% else %}
+                                Không phát hiện bệnh
+                            {% endif %}
+                        </p>
+                        {% if result1.endswith(('.jpg', '.jpeg', '.png')) %}
+                            <img src="/static/{{ result1 }}" class="img-fluid" alt="Result 1">
+                        {% else %}
+                            <video controls class="img-fluid">
+                                <source src="/static/{{ result1 }}" type="video/mp4">
+                            </video>
+                        {% endif %}
+                    </div>
+                    {% if result2 %}
+                        <div class="col-md-6">
+                            <h3>{{ model2 }}</h3>
+                            <p>Độ tin cậy trung bình: {{ conf2 }}</p>
+                            <p>Tốc độ dự đoán: {{ time2 }} ms</p>
+                            <p>Các bệnh phát hiện: 
+                                {% if diseases2 %}
+                                    {{ diseases2 | join(", ") }}
+                                {% else %}
+                                    Không phát hiện bệnh
+                                {% endif %}
+                            </p>
+                            {% if result2.endswith(('.jpg', '.jpeg', '.png')) %}
+                                <img src="/static/{{ result2 }}" class="img-fluid" alt="Result 2">
+                            {% else %}
+                                <video controls class="img-fluid">
+                                    <source src="/static/{{ result2 }}" type="video/mp4">
+                                </video>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% if recommendations %}
+                    <div class="mt-4">
+                        <h4>Biện pháp phòng chống</h4>
+                        {% for disease, info in recommendations.items() %}
+                            <h5>{{ disease }}</h5>
+                            <p>{{ info.description }}</p>
+                            <ul>
+                                {% for measure in info.prevention %}
+                                    <li>{{ measure }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Nút chat tròn -->
+    <div class="chat-button" id="chatButton">
+        💬
+    </div>
+
+    <!-- Chatbox -->
+    <div class="chat-box" id="chatBox">
+        <div class="chat-header">
+            <span>Tư vấn bệnh lá sầu riêng</span>
+            <button type="button" class="btn-close btn-close-white" id="closeChat"></button>
+        </div>
+        <div class="chat-body" id="chatBody">
+            <div class="chat-message ai">
+                <div class="message-content">Chào bạn! Tôi là AI tư vấn về bệnh lá sầu riêng và chăm sóc sầu riêng. Hỏi tôi bất cứ điều gì liên quan nhé!</div>
+            </div>
+        </div>
+        <div class="chat-footer">
+            <input type="text" id="chatInput" placeholder="Nhập câu hỏi...">
+            <button id="chatSend">Gửi</button>
+        </div>
+    </div>
+
+    <footer class="text-center">
+        <div class="container">
+            <p>© 2025 Dự án Nhận diện bệnh lá sầu riêng. Powered by YOLOv10.</p>
+            <p>Dữ liệu từ <a href="https://universe.roboflow.com/project-ufibr/durian-leaf-disease-laqo2/dataset/5" target="_blank">Roboflow (Durian Leaf Disease Dataset, CC BY 4.0)</a></p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Xử lý form dự đoán
+        document.addEventListener('submit', async function(e) {
+            if (e.target && e.target.id === 'predictForm') {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(result, 'text/html');
+                    const newResult = doc.querySelector('#resultContainer').innerHTML;
+                    document.querySelector('#resultContainer').innerHTML = newResult;
+                    
+                    const errorDiv = document.querySelector('.alert-danger');
+                    if (errorDiv) errorDiv.remove();
+                    const newError = doc.querySelector('.alert-danger');
+                    if (newError) document.querySelector('form').insertAdjacentElement('afterend', newError);
+                } else {
+                    console.error('Error:', response.status, response.statusText);
+                }
+            }
+        });
+
+        // Xử lý chatbox
+        const chatButton = document.getElementById('chatButton');
+        const chatBox = document.getElementById('chatBox');
+        const closeChat = document.getElementById('closeChat');
+        const chatInput = document.getElementById('chatInput');
+        const chatSend = document.getElementById('chatSend');
+        const chatBody = document.getElementById('chatBody');
+
+        let ws = null;
+
+        chatButton.addEventListener('click', () => {
+            chatBox.style.display = chatBox.style.display === 'flex' ? 'none' : 'flex';
+            if (chatBox.style.display === 'flex' && !ws) {
+                connectWebSocket();
+            }
+        });
+
+        closeChat.addEventListener('click', () => {
+            chatBox.style.display = 'none';
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        });
+
+        chatSend.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        function connectWebSocket() {
+            try {
+                ws = new WebSocket('ws://' + window.location.host + '/chat');
+                ws.onopen = () => {
+                    console.log('WebSocket connected');
+                };
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        appendMessage('ai', data.message);
+                    } catch (e) {
+                        console.error('Error parsing WebSocket message:', e);
+                        appendMessage('ai', 'Lỗi khi nhận phản hồi. Vui lòng thử lại.');
+                    }
+                };
+                ws.onclose = () => {
+                    appendMessage('ai', 'Kết nối đã đóng. Nhấn nút chat để kết nối lại.');
+                    ws = null;
+                };
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    appendMessage('ai', 'Không thể kết nối tới chatbot. Vui lòng kiểm tra kết nối mạng hoặc thử lại sau.');
+                };
+            } catch (e) {
+                console.error('Error connecting WebSocket:', e);
+                appendMessage('ai', 'Không thể kết nối tới chatbot. Vui lòng thử lại.');
+            }
+        }
+
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (message && ws && ws.readyState === WebSocket.OPEN) {
+                appendMessage('user', message);
+                try {
+                    ws.send(JSON.stringify({ message }));
+                    chatInput.value = '';
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                } catch (e) {
+                    console.error('Error sending message:', e);
+                    appendMessage('ai', 'Lỗi khi gửi tin nhắn. Vui lòng thử lại.');
+                }
+            } else if (!ws || ws.readyState !== WebSocket.OPEN) {
+                appendMessage('ai', 'Không thể gửi tin nhắn. Vui lòng mở lại chatbot.');
+            }
+        }
+
+        function appendMessage(sender, message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender}`;
+            messageDiv.innerHTML = `<div class="message-content">${message}</div>`;
+            chatBody.appendChild(messageDiv);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+    </script>
+</body>
+</html>
